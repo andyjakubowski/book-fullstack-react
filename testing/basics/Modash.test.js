@@ -2,14 +2,38 @@
 // this file in the Unit Testing chapter
 import Modash from './Modash';
 
-const string = 'there was one catch, and that was CATCH-22';
-const actual = Modash.truncate(string, 19);
-const expected = 'there was one catch...';
+describe('Modash', () => {
+  describe('`truncate()`', () => {
+    const string = 'there was one catch, and that was CATCH-22';
 
-if (actual !== expected) {
-  console.log(
-    `[FAIL] Expected \`truncate()\` to return ${expected}, got ${actual}`
-  );
-} else {
-  console.log('[PASS] `truncate()`.');
-}
+    it('truncates a string', () => {
+      expect(
+        Modash.truncate(string, 19)
+      ).toEqual('there was one catch...');
+    });
+  
+    it('no-ops if <= length', () => {
+      expect(
+        Modash.truncate(string, string.length)
+      ).toEqual(string);
+    });
+  });
+
+  describe('`capitalize()`', () => {
+    it('capitalizes first letter, lowercases rest', () => {
+      const string = 'there was one catch, and that was CATCH-22';
+
+      expect(
+        Modash.capitalize(string)
+      ).toEqual(
+        'There was one catch, and that was catch-22'
+      );
+    });
+  });
+
+  describe('`camelCase()`', () => {
+    it('', () => {
+
+    });
+  });
+});
