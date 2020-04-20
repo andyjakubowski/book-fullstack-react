@@ -112,7 +112,7 @@ class BlackSea extends React.Component {
     return (
       <div>
         <h3>Black Sea</h3>
-        <p>Nothing sea [sic] here...</p>
+        <p>Nothing to sea [sic] here...</p>
         <p>Redirecting in {counter}...</p>
         {
           (counter < 1) ? <Redirect to='/' /> : null

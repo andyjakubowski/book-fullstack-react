@@ -2,7 +2,7 @@
   "name": "music-server",
   "version": "1.0.0",
   "description": "",
-  "private": "true",
+  "private": true,
   "babel": {
     "presets": [
       "es2015",
