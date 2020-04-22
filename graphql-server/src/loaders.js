@@ -74,13 +74,40 @@ export const getUserNodeWithFriends = (nodeId) => {
   });
 };
 
-export const getPostIdsForUser = (userSource, { after, first = 2 }) => {
+const getFriendshipLevels = (nodeId) => {
+  const { dbId } = tables.splitNodeId(nodeId);
+  const table = tables.usersFriends;
+  let query = table
+    .select(table.star())
+    .where(table.user_id_a.equals(dbId));
+
+  return database.getSql(query.toQuery())
+    .then((rows) => {
+      const levelMap = {};
+
+      rows.forEach((row) => {
+        levelMap[row.user_id_b] = row.level;
+      });
+
+      return levelMap;
+    });
+};
+
+const canAccessLevel = (viewerLevel, contentLevel) => {
+  const levels = ['public', 'acquaintance', 'friend', 'top'];
+  const viewerLevelIndex = levels.indexOf(viewerLevel);
+  const contentLevelIndex = levels.indexOf(contentLevel);
+
+  return viewerLevelIndex >= contentLevelIndex;
+};
+
+export const getPostIdsForUser = (userSource, { after, first = 2 }, context) => {
   const table = tables.posts;
   let query = table
-    .select(table.id, table.created_at)
+    .select(table.id, table.created_at, table.level)
     .where(table.user_id.equals(userSource.id))
     .order(table.created_at.asc)
-    .limit(first + 1);
+    .limit(first + 10);
 
   if (after) {
     const [id, created_at] = after.split(':');
@@ -89,27 +116,36 @@ export const getPostIdsForUser = (userSource, { after, first = 2 }) => {
       .where(table.id.gt(id));
   }
 
-  return database.getSql(query.toQuery())
-    .then((allRows) => {
-      const rows = allRows.slice(0, first);
+  return Promise.all([
+    database.getSql(query.toQuery()),
+    getFriendshipLevels(context)
+  ]).then(([ allRows, friendShipLevels ]) => {
+    allRows = allRows.filter((row) => {
+      return canAccessLevel(
+        friendShipLevels[userSource.id],
+        row.level
+      );
+    });
 
-      rows.forEach((row) => {
-        row.__tableName = tables.posts.getName();
-        row.__cursor = row.id + ':' + row.created_at;
-      });
+    const rows = allRows.slice(0, first);
 
-      const hasNextPage = allRows.length > first;
-      const hasPreviousPage = false;
-      const pageInfo = {
-        hasNextPage,
-        hasPreviousPage,
-      };
+    rows.forEach((row) => {
+      row.__tableName = tables.posts.getName();
+      row.__cursor = row.id + ':' + row.created_at;
+    });
 
-      if (rows.length > 0) {
-        pageInfo.startCursor = rows[0].__cursor;
-        pageInfo.endCursor = rows[rows.length - 1].__cursor;
-      }
+    const hasNextPage = allRows.length > first;
+    const hasPreviousPage = false;
+    const pageInfo = {
+      hasNextPage,
+      hasPreviousPage,
+    };
 
-      return { rows, pageInfo };
-    })
+    if (rows.length > 0) {
+      pageInfo.startCursor = rows[0].__cursor;
+      pageInfo.endCursor = rows[rows.length - 1].__cursor;
+    }
+
+    return { rows, pageInfo };
+  });
 };
