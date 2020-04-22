@@ -149,3 +149,19 @@ export const getPostIdsForUser = (userSource, { after, first = 2 }, context) => 
     return { rows, pageInfo };
   });
 };
+
+export const createPost = (body, level, context) => {
+  const { dbId } = tables.splitNodeId(context);
+  const created_at = new Date().toISOString().split('T')[0];
+  const posts = [{ body, level, created_at, user_id: dbId }];
+  let query = tables.posts.insert(posts).toQuery();
+
+  return database.getSql(query)
+    .then(() => {
+      return database.getSql({
+        text: 'SELECT last_insert_rowid() AS id FROM posts',
+      });
+    }).then((ids) => {
+      return tables.dbIdToNodeId(ids[0].id, tables.posts.getName());
+    });
+};

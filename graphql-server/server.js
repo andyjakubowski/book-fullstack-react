@@ -12,6 +12,7 @@ import {
   GraphQLString,
   GraphQLNonNull,
   GraphQLID,
+  GraphQLEnumType,
 } from 'graphql';
 
 import {
@@ -46,25 +47,45 @@ const RootQuery = new GraphQLObjectType({
   }
 });
 
+const LevelEnum = new GraphQLEnumType({
+  name: 'PrivacyLevel',
+  values: {
+    PUBLIC: {
+      value: 'public',
+    },
+    ACQUAINTANCE: {
+      value: 'acquaintance',
+    },
+    FRIEND: {
+      value: 'friend',
+    },
+    TOP: {
+      value: 'top',
+    },
+  },
+});
+
 let inMemoryStore = {};
 const RootMutation = new GraphQLObjectType({
   name: 'RootMutation',
   description: 'The root mutation',
   fields: {
-    setNode: {
-      type: GraphQLString,
+    createPost: {
+      type: PostType,
       args: {
-        id: {
-          type: new GraphQLNonNull(GraphQLID)
+        body: {
+          type: new GraphQLNonNull(GraphQLString),
         },
-        value: {
-          type: new GraphQLNonNull(GraphQLString)
-        }
+        level: {
+          type: new GraphQLNonNull(LevelEnum),
+        },
       },
-      resolve(source, args) {
-        inMemoryStore[args.key] = args.value;
-        return inMemoryStore[args.key];
-      }
+      resolve(source, args, context) {
+        return loaders.createPost(args.body, args.level, context)
+          .then((nodeId) => {
+            return loaders.getNodeById(nodeId);
+          });
+      },
     }
   }
 });
