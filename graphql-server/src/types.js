@@ -12,49 +12,9 @@ import {
 import * as tables from './tables';
 import * as loaders from './loaders';
 
-const PageInfoType = new GraphQLObjectType({
-  name: 'PageInfo',
-  fields: {
-    hasNextPage: {
-      type: new GraphQLNonNull(GraphQLBoolean),
-    },
-    hasPreviousPage: {
-      type: new GraphQLNonNull(GraphQLBoolean),
-    },
-    startCursor: {
-      type: GraphQLString,
-    },
-    endCursor: {
-      type: GraphQLString,
-    },
-  },
-});
-
-const PostEdgeType = new GraphQLObjectType({
-  name: 'PostEdge',
-  fields: () => {
-    return {
-      cursor: {
-        type: new GraphQLNonNull(GraphQLString),
-      },
-      node: {
-        type: new GraphQLNonNull(PostType),
-      },
-    };
-  },
-});
-
-const PostsConnectionType = new GraphQLObjectType({
-  name: 'PostsConnection',
-  fields: {
-    pageInfo: {
-      type: new GraphQLNonNull(PageInfoType),
-    },
-    edges: {
-      type: new GraphQLList(PostEdgeType),
-    },
-  },
-});
+import {
+  connectionDefinitions,
+} from 'graphql-relay';
 
 export const NodeInterface = new GraphQLInterfaceType({
   name: 'Node',
@@ -163,4 +123,8 @@ export const PostType = new GraphQLObjectType({
       type: new GraphQLNonNull(GraphQLString)
     }
   }
+});
+
+const { connectionType: PostsConnectionType } = connectionDefinitions({
+  nodeType: PostType,
 });
